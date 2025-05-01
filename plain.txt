@@ -1,0 +1,35 @@
+wrote plain but I mean plan... nvm that
+
+How we plan to do this project....
+
+Classes
+
+Base Class :
+_____________
+Junior
+
+
+_____________
+Employee 
+
+-> PolicyEngine controls permission tests: 
+    What can be allowed? 
+    so I guess we put bool functions in PolicyEngine 
+
+TimeManager
+
+Task
+- creator
+- assignee
+- timestamps
+- status
+
+// Authentication & Credential Security
+    Store and credentials in users.txt
+    Hash Passwords
+
+// Task System
+    Tasks Can be Created, Assigned, InProgress, Completed, Expired
+    Can delegate tasks to some one with same clearance or higher clearance
+
+
