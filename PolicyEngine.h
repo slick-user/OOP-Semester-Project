@@ -1,3 +1,6 @@
+#ifndef POLICYENGINE_H
+#define POLICYENGINE_H
+
 #include <iostream>
 
 using namespace std;
@@ -5,6 +8,8 @@ using namespace std;
 class PolicyEngine {
 private:
   static PolicyEngine* engine;
+ 
+  string clearanceLevels[5] = {"Junior", "Employee", "Manager", "Director", "Executive"};
 
 public:
   
@@ -15,3 +20,4 @@ public:
 
 };
 
+#endif

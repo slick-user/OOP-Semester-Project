@@ -1,6 +1,3 @@
-#ifndef JUNIOR_H
-#define JUNIOR_H
-
 #include "Junior.h"
 
 Junior::Junior(string username, string password) : username(username), password(password) {
@@ -16,6 +13,11 @@ string Junior::getClearanceLevel()   { return clearanceLevel; }
 void Junior::setUsername(string username) { this->username = username; }
 void Junior::setPassword(string password) { this->password = password; } // need to save these into txt file
 
+// TASK CREATION
+void Junior::createTask(string name, Junior& assignee) { 
+  Task t(name, username, assignee.getUsername()); 
+} 
+
 // OPERATOR OVERLOADING
 bool Junior::operator==(const Junior& u1) {
   if ( (username == u1.username) && (password == u1.password) && (clearanceLevel == u1.clearanceLevel) ) {
@@ -24,4 +26,3 @@ bool Junior::operator==(const Junior& u1) {
   return false;
 }
 
-#endif
