@@ -1,156 +1,245 @@
 #include "Task.h"
-#include "PolicyEngine.h"
 #include <iostream>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
+#include "User.h"
+#include"AuditLogger.h"
+#include"PerformanceReview.h"
+#include "AuditAnomalyDetector.h"
 
 int Task::nextId = 1;
 
-Task::Task() {
-  this->taskId = 0;
-  this->creator = nullptr;
-  this->assignee = nullptr; 
-}
-
-Task::Task(User* creator, int ttlSeconds, TaskPriority priority) {
+Task::Task(User* creator, const char* desc, int ttlSeconds, int priority) {
     this->taskId = nextId++;
     this->creator = creator;
     this->assignee = nullptr;
-    this->status = CREATED;
-    this->createdTime = time(0);
+    this->status = TaskStatus::CREATED;
     this->ttlSeconds = ttlSeconds;
+    this->priority = priority;
+    
+    strncpy(this->description, desc, sizeof(this->description) - 1);
+    this->description[sizeof(this->description) - 1] = '\0';
+    
+    this->createdTime = time(0);
+    this->deadline = createdTime + ttlSeconds;
     this->assignedTime = 0;
     this->completedTime = 0;
-    this->priority = priority;
-
-    // Initialize signature to an empty string initially
-    memset(signature, 0, sizeof(signature));
+    
+    memset(this->signature, 0, sizeof(this->signature));
 }
 
 Task::~Task() {
-    // Assignee and Creator are not deleted since they're managed elsewhere
+    // Cleanup if needed
 }
 
-// For Assigning Task to someone
+bool Task::validateDelegation(User* from, User* to) const {
+    if (!from || !to) return false;
+    return to->getClearanceLevel() >= from->getClearanceLevel();
+}
+
+void Task::recursiveTimeoutCheck() {
+    if (status != TaskStatus::COMPLETED && status != TaskStatus::EXPIRED) {
+        time_t now = time(0);
+        if (now >= deadline) {
+            status = TaskStatus::EXPIRED;
+            return;
+        }
+    }
+}
+// Modify the assignTo method
 bool Task::assignTo(User* assigner, User* target) {
-    if (!assigner || !target) return false;
-
-    if (PolicyEngine::canAccess(target, assigner->getClearanceLevel())) {
-        assignee = target;
-        assignedTime = time(0);
-        status = ASSIGNED;
-        return true;
+    static AuditAnomalyDetector detector;
+    AuditLogger logger(assigner->getName().c_str());
+    
+    if (!assigner || !target) {
+        logger.logTaskAction("ASSIGN_TASK", to_string(taskId).c_str(), "FAILED_NULL_USER");
+        return false;
     }
-    return false;
+    
+    if (assigner != creator && assigner != assignee) {
+        logger.logTaskAction("ASSIGN_TASK", to_string(taskId).c_str(), "DENIED_UNAUTHORIZED");
+        return false;
+    }
+    
+    if (!validateDelegation(assigner, target)) {
+        logger.logTaskAction("ASSIGN_TASK", to_string(taskId).c_str(), "DENIED_CLEARANCE");
+        return false;
+    }
+
+    assignee = target;
+    assignedTime = time(0);
+    status = TaskStatus::ASSIGNED;
+    
+    detector.checkTaskReassignment(assigner->getName().c_str(), 
+                                 to_string(taskId).c_str());
+    
+    logger.logTaskAction("ASSIGN_TASK", to_string(taskId).c_str(), "SUCCESS");
+    return true;
 }
 
-void Task::updateStatus(TaskStatus newStatus) {
+
+bool Task::delegateTo(User* from, User* to) {
+    if (!from || !to) return false;
+    if (from != assignee) return false;
+    if (!validateDelegation(from, to)) return false;
+
+    assignee = to;
+    assignedTime = time(0);
+    status = TaskStatus::ASSIGNED;
+    return true;
+}
+
+
+// Modify the updateStatus method
+void Task::updateStatus(int newStatus) {
+    AuditLogger logger(assignee ? assignee->getName().c_str() : creator->getName().c_str());
+    
     status = newStatus;
-    if (newStatus == COMPLETED) {
+    if (newStatus == TaskStatus::COMPLETED) {
         completedTime = time(0);
-        generateSignature();  // Generate digital signature on task completion
+        generateSignature();
+        logger.logTaskAction("COMPLETE_TASK", to_string(taskId).c_str(), "SUCCESS");
+    } else {
+        logger.logTaskAction("UPDATE_TASK", to_string(taskId).c_str(), "STATUS_CHANGED");
     }
+    if (assignee && (newStatus == TaskStatus::COMPLETED || 
+        newStatus == TaskStatus::EXPIRED)) {
+PerformanceReview review(assignee->getName().c_str(), 
+                   assignee->getClearanceLevel());
+review.addTaskMetric(this);
+}
+status = newStatus;
+
 }
 
-void Task::checkAndExpire() {
-    time_t now = time(0);
-    double elapsedTime = difftime(now, createdTime);
+bool Task::completeTask(User* completer) {
+    if (!completer || completer != assignee) return false;
+    if (status != TaskStatus::IN_PROGRESS) return false;
 
-    // If TTL has passed and the task isn't completed yet, expire the task
-    if (status != COMPLETED && elapsedTime > ttlSeconds) {
-        status = EXPIRED;
-    }
-}
-
-Task& Task::operator=(const Task& other) {
-    if (this != &other) {
-        creator = other.creator;
-        assignee = other.assignee;
-        status = other.status;
-        createdTime = other.createdTime;
-        assignedTime = other.assignedTime;
-        completedTime = other.completedTime;
-        ttlSeconds = other.ttlSeconds;
-        taskId = nextId++;
-        priority = other.priority;
-        // Copy the signature as well
-        strncpy_s(signature, other.signature, sizeof(signature));
-    }
-    return *this;
-}
-
-ostream& operator<<(ostream& out, const Task& task) {
-    out << "Task ID: " << task.getId() << "\n"
-       << "Creator: " << task.getCreator()->getName() << "\n"
-       << "Assignee: " << (task.getAssignee() ? task.getAssignee()->getName() : "None") << "\n"
-       << "Status: " << task.getStatusString() << "\n"
-       << "Priority: " << task.getPriorityString() << "\n"
-       << "Signature: " << task.getSignature() << "\n";
-    return out;
-}
-
-// GETTERS
-int Task::getId() const { return taskId; }
-
-TaskStatus Task::getStatus() const { return status; }
-
-string Task::getStatusString() const {
-    switch (status) {
-        case CREATED: return "Created";
-        case ASSIGNED: return "Assigned";
-        case IN_PROGRESS: return "In Progress";
-        case COMPLETED: return "Completed";
-        case EXPIRED: return "Expired";
-        default: return "Unknown";
-    }
-}
-
-User* Task::getAssignee() const { return assignee; }
-User* Task::getCreator() const { return creator; }
-
-time_t Task::getCreatedTime() const { return createdTime; }
-
-TaskPriority Task::getPriority() const { return priority; }
-
-string Task::getPriorityString() const {
-    switch (priority) {
-        case HIGH: return "High";
-        case MEDIUM: return "Medium";
-        case LOW: return "Low";
-        default: return "Unknown";
-    }
-}
-
-void Task::generateSignature() {
-    string data = to_string(taskId) + creator->getName();
-    size_t hash = 0;
-    for (size_t i = 0; i < data.length(); i++) {
-        hash = (hash * 31 + data[i]) % 100000;
-    }
-    snprintf(signature, sizeof(signature), "%s-%05zu", creator->getName().c_str(), hash);
-}
-
-const char* Task::getSignature() const { return signature; }
-
-
-// Add to Task.cpp
-bool Task::isOverdue() const {
-    if (status == COMPLETED) {
-        return completedTime > deadline;
-    }
-    return time(0) > deadline;
-}
-
-bool Task::completeTask() {
-    if (status != IN_PROGRESS) return false;
-    status = COMPLETED;
     completedTime = time(0);
+    status = TaskStatus::COMPLETED;
     generateSignature();
     return true;
 }
 
-double Task::completionTime() const {
-    if (status != COMPLETED) return 0.0;
-    return difftime(completedTime, createdTime);
+void Task::checkExpiration() {
+    recursiveTimeoutCheck();
 }
+
+void Task::generateSignature() {
+    char buffer[356];
+    sprintf(buffer, "%d%s%ld", taskId, creator->getName(), completedTime);
+    
+    // Simple hash generation
+    unsigned long hash = 5381;
+    int c;
+    char* str = buffer;
+    while ((c = *str++)) {
+        hash = ((hash << 5) + hash) + c;
+    }
+    
+    sprintf(signature, "%s-%lu", creator->getName(), hash % 100000);
+}
+
+const char* Task::getStatusString() const {
+    switch (status) {
+        case TaskStatus::CREATED: return "Created";
+        case TaskStatus::ASSIGNED: return "Assigned";
+        case TaskStatus::IN_PROGRESS: return "In Progress";
+        case TaskStatus::COMPLETED: return "Completed";
+        case TaskStatus::EXPIRED: return "Expired";
+        default: return "Unknown";
+    }
+}
+
+const char* Task::getPriorityString() const {
+    switch (priority) {
+        case TaskPriority::HIGH: return "High";
+        case TaskPriority::MEDIUM: return "Medium";
+        case TaskPriority::LOW: return "Low";
+        default: return "Unknown";
+    }
+}
+
+bool Task::isExpired() const {
+    if (status == TaskStatus::COMPLETED) return false;
+    return time(0) >= deadline;
+}
+
+double Task::getTimeToExpiration() const {
+    if (status == TaskStatus::COMPLETED || status == TaskStatus::EXPIRED) 
+        return 0.0;
+    time_t now = time(0);
+    return difftime(deadline, now);
+}
+
+Task& Task::operator=(const Task& other) {
+    if (this != &other) {
+        taskId = nextId++;
+        strncpy(description, other.description, sizeof(description));
+        creator = other.creator;
+        assignee = other.assignee;
+        status = other.status;
+        priority = other.priority;
+        createdTime = other.createdTime;
+        assignedTime = other.assignedTime;
+        completedTime = other.completedTime;
+        deadline = other.deadline;
+        ttlSeconds = other.ttlSeconds;
+        strncpy(signature, other.signature, sizeof(signature));
+    }
+    return *this;
+}
+
+ostream& operator<<(ostream& os, const Task& task) {
+    os << "Task #" << task.taskId << " - " << task.description << "\n"
+       << "Status: " << task.getStatusString() << "\n"
+       << "Priority: " << task.getPriorityString() << "\n"
+       << "Creator: " << task.creator->getName() << "\n"
+       << "Assignee: " << (task.assignee ? task.assignee->getName() : "None") << "\n"
+       << "Time to expiration: " << task.getTimeToExpiration() << " seconds\n"
+       << "Signature: " << task.signature;
+    return os;
+}
+
+
+
+
+void Task::setPriority(int newPriority) {
+    if (newPriority >= TaskPriority::HIGH && newPriority <= TaskPriority::LOW) {
+        priority = newPriority;
+    }
+}
+
+// Add to existing Task class implementation
+
+// bool Task::approveTask(User* approver) {
+//     char signature[64];
+//     time_t now = time(0);
+    
+//     DigitalSignature::sign(approver->getName().c_str(), now, signature);
+//     strncpy(this->signature, signature, sizeof(this->signature) - 1);
+    
+//     // Log the approval
+//     EncryptedLogger logger;
+//     char logEntry[256];
+//     snprintf(logEntry, sizeof(logEntry), 
+//              "Task #%d approved by %s at %ld", 
+//              taskId, approver->getName().c_str(), now);
+//     logger.writeLog(logEntry);
+    
+//     return true;
+// }
+
+// bool Task::delegateWithCycleCheck(User* from, User* to) {
+//     static CycleDetector detector;
+    
+//     if (!detector.addDelegation(to->getName().c_str())) {
+//         return false;  // Cycle detected or chain too long
+//     }
+    
+//     bool result = delegateTo(from, to);
+//     if (!result) {
+//         detector.clear();
+//     }
+    
+//     return result;
+// }

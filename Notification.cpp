@@ -1,82 +1,192 @@
 #include "Notification.h"
+#include <fstream>
+#include <iostream>
 
-Notification::Notification(const string& sender, NotificationType type, const string& message)
-    : sender(sender), type(type), message(message) {
-    timestamp = getTimestamp();
+Notification::Notification(const User* sender, const char* content, int type, int targetLevel) 
+    : type(type), timestamp(time(0)), acknowledged(false), targetClearanceLevel(targetLevel)
+{
+    strncpy(this->sender, sender->getName().c_str(), 49);
+    this->sender[49] = '\0';
+    strncpy(this->content, content, MAX_CONTENT_LENGTH - 1);
+    this->content[MAX_CONTENT_LENGTH - 1] = '\0';
 }
 
-void Notification::send() {
-    cout << "[" << timestamp << "] " << sender << " sent a " << getTypeString() << " notification: " << message << endl;
-    logNotification();
-}
-
-void Notification::logNotification() {
-    ofstream notificationFile("notifications.txt", ios::app);
-    if (notificationFile.is_open()) {
-        notificationFile << "[" << timestamp << "] " << sender << " sent a " << getTypeString() << " notification: " << message << endl;
-        notificationFile.close();
+bool Notification::validateSenderPermission(const User* sender) const {
+    if (!sender) return false;
+    
+    int clearanceLevel = sender->getClearanceLevel();
+    
+    switch (type) {
+        case NotificationType::INFO:
+            return true;  // Anyone can send INFO
+        case NotificationType::WARNING:
+            return clearanceLevel >= 3;  // Manager and above
+        case NotificationType::EMERGENCY:
+            return clearanceLevel >= 4;  // Director and above
+        default:
+            return false;
     }
 }
 
-string Notification::getTimestamp() const {
-    time_t now = time(0);
-    char* dt = ctime(&now);
-    return string(dt);
+void Notification::logNotification() const {
+    AuditLogger logger(sender);
+    char details[300];
+    snprintf(details, sizeof(details), "Type: %s, Content: %s, Target Level: %d", 
+             getTypeString(), content, targetClearanceLevel);
+    logger.logSecurityEvent("NOTIFICATION", details, "BROADCAST");
 }
 
-string Notification::getTypeString() const {
+bool Notification::broadcast() {
+    logNotification();
+    return true;
+}
+
+bool Notification::acknowledge(const User* user) {
+    if (!user || user->getClearanceLevel() < targetClearanceLevel) {
+        return false;
+    }
+    acknowledged = true;
+    return true;
+}
+
+const char* Notification::getTypeString() const {
     switch (type) {
-        case WARNING: return "WARNING";
-        case EMERGENCY: return "EMERGENCY";
+        case NotificationType::INFO: return "INFO";
+        case NotificationType::WARNING: return "WARNING";
+        case NotificationType::EMERGENCY: return "EMERGENCY";
         default: return "UNKNOWN";
     }
 }
 
-void NotificationSystem::sendNotification(User* sender, NotificationType type, const string& message) {
-    if (canSendNotification(sender, type)) {
-        Notification notification(sender->getName(), type, message);
-        notification.send();
-    } else {
-        cout << "ACCESS DENIED: " << sender->getName() << " does not have permission to send " << (type == EMERGENCY ? "EMERGENCY" : "WARNING") << " notifications." << endl;
+// NotificationSystem Implementation
+NotificationSystem::NotificationSystem() : logger("NotificationSystem") {
+    loadFromFile();
+}
+
+NotificationSystem::~NotificationSystem() {
+    for (Notification* notification : notifications) {
+        delete notification;
+    }
+    notifications.clear();
+}
+
+bool NotificationSystem::validatePermissions(const User* sender, int type) const {
+    if (!sender) return false;
+    
+    switch (type) {
+        case NotificationType::INFO:
+            return true;
+        case NotificationType::WARNING:
+            return sender->getClearanceLevel() >= 3;
+        case NotificationType::EMERGENCY:
+            return sender->getClearanceLevel() >= 4;
+        default:
+            return false;
     }
 }
 
-bool NotificationSystem::canSendNotification(User* sender, NotificationType type) {
-    // Only Managers and Executives can send EMERGENCY notifications
-    if (type == EMERGENCY) {
-        if (sender->getClearanceLevel() >= 4) {  // Clearance level 4 corresponds to Manager or higher
-            return true;
-        } else {
-            return false;
-        }
+bool NotificationSystem::sendNotification(const User* sender, const char* content, 
+                                        int type, int targetLevel) {
+    if (!validatePermissions(sender, type)) {
+        logger.logSecurityEvent("SEND_NOTIFICATION", "Permission denied", "FAILED");
+        return false;
     }
-    // All roles can send WARNING notifications
+    
+    Notification* notification = new Notification(sender, content, type, targetLevel);
+    notifications.push_back(notification);
+    
+    saveToFile(notification);
+    logger.logSecurityEvent("SEND_NOTIFICATION", "Notification broadcast", "SUCCESS");
     return true;
 }
 
-void NotificationSystem::displayNotifications() {
-    try {
-        ifstream notificationFile("notifications.txt");
-        if (!notificationFile.is_open()) {
-            cout << "\n=== Notifications ===\n";
-            cout << "No notifications found.\n";
-            cout << "===================\n";
-            return;
-        }
-
-        cout << "\n=== Notifications ===\n";
-        string line;
-        bool hasNotifications = false;
-        while (getline(notificationFile, line)) {
-            cout << line << endl;
+void NotificationSystem::displayUserNotifications(const User* user) const {
+    cout << "\n=== Notifications for " << user->getName() << " ===\n";
+    bool hasNotifications = false;
+    
+    for (size_t i = 0; i < notifications.size(); i++) {
+        if (user->getClearanceLevel() >= notifications[i]->getTargetLevel()) {
+            cout << "\nNotification #" << i + 1 << ":\n"
+                 << "Type: " << notifications[i]->getTypeString() << "\n"
+                 << "From: " << notifications[i]->getSender() << "\n"
+                 << "Content: " << notifications[i]->getContent() << "\n"
+                 << "Status: " << (notifications[i]->isAcknowledged() ? 
+                                 "Acknowledged" : "Unacknowledged") << "\n"
+                 << "-------------------\n";
             hasNotifications = true;
         }
-        if (!hasNotifications) {
-            cout << "No notifications available.\n";
-        }
-        cout << "===================\n";
-        notificationFile.close();
-    } catch (const exception& e) {
-        cerr << "Error reading notifications: " << e.what() << endl;
     }
+    
+    if (!hasNotifications) {
+        cout << "No notifications available.\n";
+    }
+}
+
+bool NotificationSystem::saveToFile(const Notification* notification) const {
+    ofstream file("notifications.txt", ios::app);
+    if (!file.is_open()) return false;
+    
+    file << "[" << notification->getTimestamp() << "] "
+         << notification->getTypeString() << " from "
+         << notification->getSender() << " (Level " 
+         << notification->getTargetLevel() << "): "
+         << notification->getContent() << "\n";
+    
+    file.close();
+    return true;
+}
+
+bool NotificationSystem::loadFromFile() {
+    ifstream file("notifications.txt");
+    if (!file.is_open()) return false;
+    
+    string line;
+    while (getline(file, line)) {
+        // Process stored notifications if needed
+    }
+    
+    file.close();
+    return true;
+}
+
+void NotificationSystem::broadcastEmergency(const User* sender, const char* content) {
+    if (sender->getClearanceLevel() >= 4) { // Director or above
+        sendNotification(sender, content, NotificationType::EMERGENCY, 1);
+    }
+}
+
+void NotificationSystem::getUnacknowledgedNotifications(const User* user) const {
+    cout << "\n=== Unacknowledged Notifications ===\n";
+    bool hasUnacknowledged = false;
+    
+    for (size_t i = 0; i < notifications.size(); i++) {
+        if (!notifications[i]->isAcknowledged() && 
+            user->getClearanceLevel() >= notifications[i]->getTargetLevel()) {
+            cout << "Notification #" << i + 1 << ": "
+                 << notifications[i]->getContent() << "\n";
+            hasUnacknowledged = true;
+        }
+    }
+    
+    if (!hasUnacknowledged) {
+        cout << "No unacknowledged notifications.\n";
+    }
+}
+
+bool NotificationSystem::acknowledgeNotification(const User* user, int notificationId) {
+    if (notificationId < 1 || notificationId > static_cast<int>(notifications.size())) 
+        return false;
+    
+    return notifications[notificationId - 1]->acknowledge(user);
+}
+
+int NotificationSystem::getPendingNotificationCount(const User* user) const {
+    int count = 0;
+    for (const Notification* notification : notifications) {
+        if (!notification->isAcknowledged() && 
+            user->getClearanceLevel() >= notification->getTargetLevel()) {
+            count++;
+        }
+    }
+    return count;
 }

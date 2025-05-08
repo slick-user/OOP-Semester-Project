@@ -1,57 +1,97 @@
 #include "Authentication.h"
-#include "AuthUtils.h"
 #include <fstream>
-#include <iostream>
 #include <cstring>
+#include <ctime>
+#include <iostream>
+#include "AuditLogger.h"
+#include "AuditAnomalyDetector.h"
 
 using namespace std;
 
-User* Authentication::loginUserInteractive() {
-    char username[HASH_SIZE], password[HASH_SIZE];
-    
-    for (int attempt = 1; attempt <= MAX_LOGIN_ATTEMPTS; ++attempt) {
-        cout << "\nLogin Attempt (" << attempt << "/" << MAX_LOGIN_ATTEMPTS << ")\n";
-        cout << "Username: ";
-        cin >> username;
-        cout << "Password: ";
-        cin >> password;
+// Define static member
+char Authentication::attemptLogFile[] = "login_attempts.txt";
 
-        User* user = loginUser(username, password);
-        if (user != nullptr) {
-            logAuthenticationAttempt(username, true);
-            return user;
-        }
-        
-        cout << "Invalid credentials. Try again.\n";
-        logAuthenticationAttempt(username, false);
+void Authentication::hashPassword(const char* input, char* output) {
+    unsigned long hash = 5381;
+    int c;
+    while ((c = *input++)) {
+        hash = ((hash << 5) + hash) + c;
     }
-
-    cout << "Maximum attempts reached. Access denied.\n";
-    return nullptr;
+    snprintf(output, HASH_SIZE, "%lu", hash);
 }
 
-User* Authentication::loginUser(const char* username, const char* password) {
+void Authentication::logFailedAttempt(const char* username) {
+    ofstream log(attemptLogFile, ios::app);
+    if (log.is_open()) {
+        time_t now = time(0);
+        log << username << " " << now << endl;
+        log.close();
+    }
+}
+
+bool Authentication::isLockedOut(const char* username) {
+    ifstream log(attemptLogFile);
+    if (!log.is_open()) return false;
+
+    char storedUser[50];
+    time_t attemptTime;
+    int failCount = 0;
+    time_t now = time(0);
+
+    while (log >> storedUser >> attemptTime) {
+        if (strcmp(storedUser, username) == 0) {
+            if (difftime(now, attemptTime) < 1800) { // 30-minute lockout
+                failCount++;
+            }
+        }
+    }
+    log.close();
+    return failCount >= MAX_LOGIN_ATTEMPTS;
+}
+
+bool Authentication::registerUser(const char* username, const char* password, int clearanceLevel) {
+    ifstream checkFile("users.txt");
+    char storedUser[50], storedHash[HASH_SIZE];
+    int storedLevel;
+
+    while (checkFile >> storedUser >> storedHash >> storedLevel) {
+        if (strcmp(storedUser, username) == 0) {
+            checkFile.close();
+            return false;
+        }
+    }
+    checkFile.close();
+
+    char hashedPassword[HASH_SIZE];
+    hashPassword(password, hashedPassword);
+
+    ofstream userFile("users.txt", ios::app);
+    if (!userFile.is_open()) return false;
+
+    userFile << username << " " << hashedPassword << " " << clearanceLevel << endl;
+    userFile.close();
+    return true;
+}
+
+bool Authentication::verifyCredentials(const char* username, const char* password) {
     char hashedInput[HASH_SIZE];
     hashPassword(password, hashedInput);
 
-    ifstream in("users.txt");
-    if (!in.is_open()) {
-        cerr << "Error opening users.txt\n";
-        return nullptr;
-    }
+    ifstream userFile("users.txt");
+    if (!userFile.is_open()) return false;
 
-    char storedUser[HASH_SIZE], storedHash[HASH_SIZE];
-    int storedClearance;
+    char storedUser[50], storedHash[HASH_SIZE];
+    int clearanceLevel;
 
-    while (in >> storedUser >> storedHash >> storedClearance) {
-        if (strcmp(storedUser, username) == 0 && strcmp(storedHash, hashedInput) == 0) {
-            in.close();
-            return createUserByRole(username, password, storedClearance);
+    while (userFile >> storedUser >> storedHash >> clearanceLevel) {
+        if (strcmp(storedUser, username) == 0 && 
+            strcmp(storedHash, hashedInput) == 0) {
+            userFile.close();
+            return true;
         }
     }
-    
-    in.close();
-    return nullptr;
+    userFile.close();
+    return false;
 }
 
 User* Authentication::createUserByRole(const char* username, const char* password, int clearanceLevel) {
@@ -65,99 +105,86 @@ User* Authentication::createUserByRole(const char* username, const char* passwor
     }
 }
 
-bool Authentication::registerUser(const char* username, const char* password, int clearanceLevel) {
-    if (userExists(username)) {
-        cout << "Username already exists.\n";
+bool Authentication::changePassword(const char* username, const char* oldPassword, const char* newPassword) {
+    if (!verifyCredentials(username, oldPassword)) {
         return false;
     }
 
-    if (clearanceLevel < 1 || clearanceLevel > 5) {
-        cout << "Invalid clearance level. Must be between 1 and 5.\n";
-        return false;
-    }
+    char newHash[HASH_SIZE];
+    hashPassword(newPassword, newHash);
 
-    char hashed[HASH_SIZE];
-    hashPassword(password, hashed);
-
-    ofstream out("users.txt", ios::app);
-    if (!out.is_open()) {
-        cerr << "Error creating user file.\n";
-        return false;
-    }
-
-    out << username << " " << hashed << " " << clearanceLevel << "\n";
-    out.close();
+    ifstream inFile("users.txt");
+    ofstream outFile("users_temp.txt");
     
+    char storedUser[50], storedHash[HASH_SIZE];
+    int clearanceLevel;
+
+    while (inFile >> storedUser >> storedHash >> clearanceLevel) {
+        if (strcmp(storedUser, username) == 0) {
+            outFile << username << " " << newHash << " " << clearanceLevel << endl;
+        } else {
+            outFile << storedUser << " " << storedHash << " " << clearanceLevel << endl;
+        }
+    }
+
+    inFile.close();
+    outFile.close();
+
+    remove("users.txt");
+    rename("users_temp.txt", "users.txt");
     return true;
 }
 
-bool Authentication::changePassword(const char* username, const char* oldPassword, const char* newPassword) {
-    char oldHashed[HASH_SIZE], newHashed[HASH_SIZE];
-    hashPassword(oldPassword, oldHashed);
-    hashPassword(newPassword, newHashed);
-
-    ifstream in("users.txt");
-    ofstream temp("temp.txt");
+User* Authentication::loginUser(const char* username, const char* password) {
+    AuditAnomalyDetector detector;
+    AuditLogger logger(username);
     
-    if (!in.is_open() || !temp.is_open()) {
-        cerr << "Error accessing user files.\n";
-        return false;
+    if (isLockedOut(username)) {
+        detector.checkLoginPattern(username, time(0));
+        logger.logSecurityEvent("LOGIN_ATTEMPT", "Account locked", "DENIED");
+        cout << "Account is locked due to multiple failed attempts.\n";
+        cout << "Please try again after 30 minutes.\n";
+        return nullptr;
     }
 
-    char fileUser[HASH_SIZE], fileHash[HASH_SIZE];
-    int clearance;
-    bool updated = false;
-
-    while (in >> fileUser >> fileHash >> clearance) {
-        if (strcmp(fileUser, username) == 0 && strcmp(fileHash, oldHashed) == 0) {
-            temp << fileUser << " " << newHashed << " " << clearance << "\n";
-            updated = true;
-        } else {
-            temp << fileUser << " " << fileHash << " " << clearance << "\n";
-        }
+    if (!verifyCredentials(username, password)) {
+        detector.checkLoginPattern(username, time(0));
+        logger.logSecurityEvent("LOGIN_ATTEMPT", "Invalid credentials", "FAILED");
+        logFailedAttempt(username);
+        cout << "Invalid credentials.\n";
+        return nullptr;
     }
 
-    in.close();
-    temp.close();
-
-    if (updated) {
-        remove("users.txt");
-        rename("temp.txt", "users.txt");
-    } else {
-        remove("temp.txt");
+    MFA mfa(username);
+    if (!mfa.generateAndStoreOTP()) {
+        logger.logSecurityEvent("MFA_GENERATION", "Failed to generate OTP", "FAILED");
+        return nullptr;
     }
 
-    return updated;
-}
+    cout << "OTP has been generated. Please check your file.\n";
+    cout << "Enter OTP: ";
+    char inputOTP[7];
+    cin >> inputOTP;
 
-bool Authentication::userExists(const char* username) {
-    ifstream in("users.txt");
-    if (!in.is_open()) return false;
+    if (!mfa.validateOTP(inputOTP)) {
+        logger.logSecurityEvent("MFA_VALIDATION", "Invalid or expired OTP", "FAILED");
+        logFailedAttempt(username);
+        return nullptr;
+    }
 
-    char existingUser[HASH_SIZE], existingHash[HASH_SIZE];
-    int existingClearance;
+    ifstream userFile("users.txt");
+    char storedUser[50], storedHash[HASH_SIZE];
+    int clearanceLevel;
 
-    while (in >> existingUser >> existingHash >> existingClearance) {
-        if (strcmp(existingUser, username) == 0) {
-            in.close();
-            return true;
+    while (userFile >> storedUser >> storedHash >> clearanceLevel) {
+        if (strcmp(storedUser, username) == 0) {
+            userFile.close();
+            logger.logSecurityEvent("LOGIN", "User authenticated successfully", "SUCCESS");
+            return createUserByRole(username, password, clearanceLevel);
         }
     }
     
-    in.close();
-    return false;
-}
-
-void Authentication::logAuthenticationAttempt(const char* username, bool success) {
-    ofstream log("auth_log.txt", ios::app);
-    if (log.is_open()) {
-        time_t now = time(nullptr);
-        char* timestamp = ctime(&now);
-        timestamp[strlen(timestamp) - 1] = '\0'; // Remove newline
-        
-        log << "[" << timestamp << "] User '" << username 
-            << "' authentication " << (success ? "successful" : "failed") << "\n";
-        
-        log.close();
-    }
+    userFile.close();
+    logger.logSecurityEvent("LOGIN_ATTEMPT", "User not found", "FAILED");
+    return nullptr;
 }

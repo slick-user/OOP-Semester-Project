@@ -6,7 +6,6 @@
 class TimeManager {
 public:
     static void expireTasks(Task** tasks, int taskCount);
-    static void expireTasks(Task* tasks, int taskCount);
 };
 
 #endif

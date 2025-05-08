@@ -60,6 +60,8 @@ void AuditAnomalyDetector::checkTaskReassignments(const string& taskId, const st
 }
 
 void AuditAnomalyDetector::generateAnomalyReport() {
+    // Placeholder for generating the full anomaly report.
+    // Can implement more sophisticated anomaly detection algorithms as needed.
     cout << "Generating anomaly report...\n";
     ifstream anomalyReport("anomaly_report.txt");
     string line;

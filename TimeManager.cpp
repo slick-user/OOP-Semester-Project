@@ -3,13 +3,7 @@
 void TimeManager::expireTasks(Task** tasks, int taskCount) {
     for (int i = 0; i < taskCount; ++i) {
         if (tasks[i]) {
-            tasks[i]->checkAndExpire();
+            tasks[i]->checkExpiration();  // Changed from checkAndExpire to checkExpiration
         }
-    }
-}
-
-void TimeManager::expireTasks(Task* tasks, int taskCount) {
-    for (int i = 0; i < taskCount; ++i) {
-      tasks[i].checkAndExpire();
     }
 }

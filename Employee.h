@@ -5,27 +5,26 @@
 #include <string>
 #include <fstream>
 
-using namespace std;
-
 struct EmployeeStats {
-    string username;
+    std::string username;
     int clearanceLevel;
     int totalTasks{0};
     int completedTasks{0};
     int overdueTasks{0};
 
     EmployeeStats() = default;
-    EmployeeStats(const string& name, int level) : username(name), clearanceLevel(level) {}
+    EmployeeStats(const std::string& name, int level) 
+        : username(name), clearanceLevel(level) {}
 
     double getPerformanceScore() const {
         if (totalTasks == 0) return 0.0;
         return (completedTasks * 100.0) / totalTasks;
     }
 
-    bool loadStats(const string& name);
+    bool loadStats(const std::string& name);
 };
 
 // Add operator<< declaration
-ostream& operator<<(ostream& out, const EmployeeStats& stats);
+std::ostream& operator<<(std::ostream& os, const EmployeeStats& stats);
 
 #endif

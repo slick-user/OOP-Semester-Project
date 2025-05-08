@@ -7,7 +7,7 @@
 class PolicyEngine {
 public:
     static bool canAccess(User* user, int requiredClearance);
-    static bool canAccess(User* sender, User* recipient, MessageType type);
+    bool canAccess(User* sender, User* recipient, int type);
 };
 
 #endif
