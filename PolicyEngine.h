@@ -1,23 +1,13 @@
-#ifndef POLICYENGINE_H
-#define POLICYENGINE_H
+#ifndef POLICY_ENGINE_H
+#define POLICY_ENGINE_H
 
-#include <iostream>
-
-using namespace std;
+#include "User.h"
+#include "Message.h"
 
 class PolicyEngine {
-private:
-  static PolicyEngine* engine;
- 
-  string clearanceLevels[5] = {"Junior", "Employee", "Manager", "Director", "Executive"};
-
 public:
-  
-  bool getPermission(const string role, const string action);
-  bool CheckClearance(const string role);
-
-  static PolicyEngine* getEngine();
-
+    static bool canAccess(User* user, int requiredClearance);
+    static bool canAccess(User* sender, User* recipient, MessageType type);
 };
 
 #endif

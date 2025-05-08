@@ -1,0 +1,16 @@
+[Mon May  5 12:13:08 2025] SYSTEM REGISTER New user registered SUCCESS
+[Mon May  5 12:13:23 2025] sameer LOGIN User logged in SUCCESS
+[Mon May  5 14:27:07 2025] SYSTEM REGISTER New user registered SUCCESS
+[Mon May  5 14:27:18 2025] Azlan LOGIN User logged in SUCCESS
+[Mon May  5 14:28:56 2025] Azlan ACCESS_DENIED Attempted to access employee management FAILURE
+[Mon May  5 14:28:57 2025] Azlan ACCESS_DENIED Attempted to access employee management FAILURE
+[Mon May  5 14:28:57 2025] Azlan ACCESS_DENIED Attempted to access employee management FAILURE
+[Mon May  5 14:28:58 2025] Azlan ACCESS_DENIED Attempted to access employee management FAILURE
+[Mon May  5 14:28:58 2025] Azlan ACCESS_DENIED Attempted to access employee management FAILURE
+[Mon May  5 14:28:59 2025] Azlan ACCESS_DENIED Attempted to access employee management FAILURE
+[Mon May  5 14:30:19 2025] Azlan LOGIN User logged in SUCCESS
+[Tue May  6 16:19:28 2025] SYSTEM REGISTER New user registered SUCCESS
+[Tue May  6 16:19:35 2025] Azlan2 LOGIN User logged in SUCCESS
+[Tue May  6 16:21:10 2025] Azlan2 LOGIN User logged in SUCCESS
+[Tue May  6 16:21:14 2025] Azlan2 VIEW_STATS Failed to open employee records FAILURE
+[Tue May  6 16:21:22 2025] Azlan2 PERFORMANCE_CHECK Failed to check Azlan's performance FAILURE
