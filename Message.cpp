@@ -48,7 +48,7 @@ bool Message::send() {
         encrypt();
     }
 
-    string filename = string(recipientName) ;// + MessageSystem::INBOX_SUFFIX;
+    string filename = string(recipientName) + "_inbox.txt";// + MessageSystem::INBOX_SUFFIX;
     ofstream out(filename.c_str(), ios::app);
     
     if (!out.is_open()) {
@@ -66,8 +66,7 @@ bool Message::send() {
     logger.logMessageAction("SEND_MESSAGE", recipientName, "SUCCESS");
     
     // Update performance metrics
-    PerformanceReview review(recipientName, 
-        getUserByName(recipientName)->getClearanceLevel());
+    PerformanceReview review(recipientName, getUserByName(recipientName)->getClearanceLevel());
     review.addMessageMetric(time(0) - timestamp);
     
     return true;

@@ -1,16 +1,16 @@
 #ifndef NOTIFICATION_H
 #define NOTIFICATION_H
 
-#include <cstring>
-#include <ctime>
+#include <cstring>  // For strncpy, strlen
+#include <ctime>    // For time_t
 #include "User.h"
 #include "AuditLogger.h"
-#include <vector>
 
+// Notification types (unchanged)
 struct NotificationType {
-    static const int INFO = 0;     // Can be sent by anyone
-    static const int WARNING = 1;   // Requires Manager level (3) or higher
-    static const int EMERGENCY = 2; // Requires Director level (4) or higher
+    static const int INFO = 0;
+    static const int WARNING = 1;
+    static const int EMERGENCY = 2;
 };
 
 class Notification {
@@ -31,7 +31,7 @@ public:
     bool acknowledge(const User* user);
     bool validateSenderPermission(const User* sender) const;
     
-    // Getters
+    // Getters (unchanged)
     const char* getSender() const { return sender; }
     const char* getContent() const { return content; }
     int getType() const { return type; }
@@ -43,12 +43,15 @@ public:
 
 class NotificationSystem {
 private:
-    vector<Notification*> notifications;
+    Notification** notifications;  // Dynamic array instead of vector<Notification*>
+    int notificationCount;
+    int notificationCapacity;
     AuditLogger logger;
     
     bool saveToFile(const Notification* notification) const;
     bool loadFromFile();
     bool validatePermissions(const User* sender, int type) const;
+    void resizeNotifications();
 
 public:
     NotificationSystem();

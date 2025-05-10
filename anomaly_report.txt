@@ -1,0 +1,10 @@
+[Sat May 10 00:31:26 2025] ANOMALY DETECTED - Severity: 1
+User: Azlan
+Event: UNUSUAL_MESSAGE
+Details: Unusual message time from Azlan to waseem
+-------------------------------------------
+[Sat May 10 00:33:43 2025] ANOMALY DETECTED - Severity: 1
+User: Azlan
+Event: UNUSUAL_MESSAGE
+Details: Unusual message time from Azlan to Azlan
+-------------------------------------------

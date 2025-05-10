@@ -94,6 +94,24 @@ bool Authentication::verifyCredentials(const char* username, const char* passwor
     return false;
 }
 
+User* Authentication::findUser(const char* username) {
+  char hashedInput[HASH_SIZE];
+
+  ifstream userFile("users.txt");
+  if (!userFile.is_open()) return nullptr;
+
+  char storedUser[50], storedHash[HASH_SIZE];
+  int clearanceLevel;
+  while (userFile >> storedUser >> storedHash >> clearanceLevel) {
+    if (strcmp(storedUser, username) == 0) {
+        userFile.close();
+        return createUserByRole(username, storedHash, clearanceLevel);
+    }
+  }
+  userFile.close();
+  return nullptr;
+}
+
 User* Authentication::createUserByRole(const char* username, const char* password, int clearanceLevel) {
     switch (clearanceLevel) {
         case 1: return new Junior(username, password);

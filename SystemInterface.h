@@ -18,8 +18,9 @@
 
 class SystemInterface {
 private:
-    Task* tasks;
+    Task** tasks;
     int taskCount;
+    int taskCapacity;
     User* currentUser;
     AuditLogger* auditLogger;
     NotificationSystem notificationSystem;
@@ -30,6 +31,9 @@ private:
     // PriorityManager priorityManager; 
 
     // Helper functions
+    void resizeTaskArray(); 
+    void addTask(Task* newTask);
+
     void displayHeader();
     void displayLoginMenu();
     void displayMainMenu();
@@ -49,8 +53,6 @@ private:
     void handleReports();
     void updateDashboard();
     void checkAndExpireAllTasks();
-
-    void addTask(Task newTask);
 
 public:
     SystemInterface();

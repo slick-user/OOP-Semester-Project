@@ -18,8 +18,11 @@ private:
     static bool isLockedOut(const char* username);
     static bool verifyCredentials(const char* username, const char* password);
     static User* createUserByRole(const char* username, const char* password, int clearanceLevel);
+    
 
 public:
+    static User* findUser(const char* username);
+    
     static User* loginUser(const char* username, const char* password);
     static bool registerUser(const char* username, const char* password, int clearanceLevel);
     static bool changePassword(const char* username, const char* oldPassword, const char* newPassword);

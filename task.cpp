@@ -102,11 +102,10 @@ void Task::updateStatus(int newStatus) {
     }
     if (assignee && (newStatus == TaskStatus::COMPLETED || 
         newStatus == TaskStatus::EXPIRED)) {
-PerformanceReview review(assignee->getName().c_str(), 
-                   assignee->getClearanceLevel());
-review.addTaskMetric(this);
-}
-status = newStatus;
+    PerformanceReview review(assignee->getName().c_str(), 
+      assignee->getClearanceLevel());
+      review.addTaskMetric(this);
+    }
 
 }
 
@@ -136,7 +135,7 @@ void Task::generateSignature() {
         hash = ((hash << 5) + hash) + c;
     }
     
-    sprintf(signature, "%s-%lu", creator->getName(), hash % 100000);
+    sprintf(signature, "%s-%lu", creator->getName().c_str(), hash % 100000);
 }
 
 const char* Task::getStatusString() const {

@@ -59,15 +59,28 @@ const char* Notification::getTypeString() const {
 }
 
 // NotificationSystem Implementation
-NotificationSystem::NotificationSystem() : logger("NotificationSystem") {
+NotificationSystem::NotificationSystem() : logger("NotificationSystem"), notifications(new Notification*[10]), notificationCount(0), notificationCapacity(10) {
     loadFromFile();
 }
 
 NotificationSystem::~NotificationSystem() {
-    for (Notification* notification : notifications) {
-        delete notification;
+  for (int i = 0; i < notificationCount; i++) {
+    delete notifications[i];
+  }
+  delete[] notifications;
+}
+
+void NotificationSystem::resizeNotifications() {
+    int newCapacity = notificationCapacity * 2;
+    Notification** newArray = new Notification*[newCapacity];
+    
+    for (int i = 0; i < notificationCount; i++) {
+        newArray[i] = notifications[i];
     }
-    notifications.clear();
+    
+    delete[] notifications;
+    notifications = newArray;
+    notificationCapacity = newCapacity;
 }
 
 bool NotificationSystem::validatePermissions(const User* sender, int type) const {
@@ -85,17 +98,18 @@ bool NotificationSystem::validatePermissions(const User* sender, int type) const
     }
 }
 
-bool NotificationSystem::sendNotification(const User* sender, const char* content, 
-                                        int type, int targetLevel) {
+bool NotificationSystem::sendNotification(const User* sender, const char* content, int type, int targetLevel) {
     if (!validatePermissions(sender, type)) {
         logger.logSecurityEvent("SEND_NOTIFICATION", "Permission denied", "FAILED");
         return false;
     }
     
-    Notification* notification = new Notification(sender, content, type, targetLevel);
-    notifications.push_back(notification);
+    if (notificationCount == notificationCapacity) {
+        resizeNotifications();
+    }
     
-    saveToFile(notification);
+    notifications[notificationCount++] = new Notification(sender, content, type, targetLevel);
+    saveToFile(notifications[notificationCount - 1]);
     logger.logSecurityEvent("SEND_NOTIFICATION", "Notification broadcast", "SUCCESS");
     return true;
 }
@@ -104,11 +118,10 @@ void NotificationSystem::displayUserNotifications(const User* user) const {
     cout << "\n=== Notifications for " << user->getName() << " ===\n";
     bool hasNotifications = false;
     
-    for (size_t i = 0; i < notifications.size(); i++) {
+    for (int i = 0; i < notificationCount; i++) {
         if (user->getClearanceLevel() >= notifications[i]->getTargetLevel()) {
             cout << "\nNotification #" << i + 1 << ":\n"
-                 << "Type: " << notifications[i]->getTypeString() << "\n"
-                 << "From: " << notifications[i]->getSender() << "\n"
+                 << "Type: " << notifications[i]->getTypeString() << "From: " << notifications[i]->getSender() << "\n"
                  << "Content: " << notifications[i]->getContent() << "\n"
                  << "Status: " << (notifications[i]->isAcknowledged() ? 
                                  "Acknowledged" : "Unacknowledged") << "\n"
@@ -142,7 +155,6 @@ bool NotificationSystem::loadFromFile() {
     
     string line;
     while (getline(file, line)) {
-        // Process stored notifications if needed
     }
     
     file.close();
@@ -159,7 +171,7 @@ void NotificationSystem::getUnacknowledgedNotifications(const User* user) const 
     cout << "\n=== Unacknowledged Notifications ===\n";
     bool hasUnacknowledged = false;
     
-    for (size_t i = 0; i < notifications.size(); i++) {
+    for (int i = 0; i < notificationCount; i++) {
         if (!notifications[i]->isAcknowledged() && 
             user->getClearanceLevel() >= notifications[i]->getTargetLevel()) {
             cout << "Notification #" << i + 1 << ": "
@@ -174,7 +186,7 @@ void NotificationSystem::getUnacknowledgedNotifications(const User* user) const 
 }
 
 bool NotificationSystem::acknowledgeNotification(const User* user, int notificationId) {
-    if (notificationId < 1 || notificationId > static_cast<int>(notifications.size())) 
+    if (notificationId < 1 || notificationId > static_cast<int>(notificationCount)) 
         return false;
     
     return notifications[notificationId - 1]->acknowledge(user);
@@ -182,9 +194,9 @@ bool NotificationSystem::acknowledgeNotification(const User* user, int notificat
 
 int NotificationSystem::getPendingNotificationCount(const User* user) const {
     int count = 0;
-    for (const Notification* notification : notifications) {
-        if (!notification->isAcknowledged() && 
-            user->getClearanceLevel() >= notification->getTargetLevel()) {
+    for (int i = 0; i < notificationCount; i++) {
+        if (!notifications[i]->isAcknowledged() && 
+            user->getClearanceLevel() >= notifications[i]->getTargetLevel()) {
             count++;
         }
     }

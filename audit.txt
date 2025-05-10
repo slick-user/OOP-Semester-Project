@@ -8,3 +8,86 @@
 [Thu May  8 00:11:30 2025] sameer LOGIN User authenticated successfully SUCCESS
 [Thu May  8 00:11:57 2025] sameer CREATE TaskID:1 SUCCESS
 [Thu May  8 00:12:38 2025] sameer CREATE TaskID:2 SUCCESS
+[Fri May  9 21:21:35 2025] SYSTEM SYSTEM_START System initialized SUCCESS
+[Fri May  9 21:21:41 2025] Azlan LOGIN_ATTEMPT Invalid credentials FAILED
+[Fri May  9 21:21:47 2025] Azlan2 LOGIN_ATTEMPT Invalid credentials FAILED
+[Fri May  9 21:21:54 2025] Azlan2 LOGIN_ATTEMPT Invalid credentials FAILED
+[Fri May  9 21:22:19 2025] Azlan MFA_VALIDATION Invalid or expired OTP FAILED
+[Fri May  9 21:22:51 2025] Azlan LOGIN User authenticated successfully SUCCESS
+[Fri May  9 21:23:16 2025] Azlan CREATE TaskID:1 SUCCESS
+[Fri May  9 21:23:39 2025] SYSTEM SYSTEM_START System initialized SUCCESS
+[Fri May  9 21:23:50 2025] Azlan LOGIN User authenticated successfully SUCCESS
+[Fri May  9 21:24:21 2025] SYSTEM SYSTEM_START System initialized SUCCESS
+[Fri May  9 21:24:30 2025] Azlan LOGIN User authenticated successfully SUCCESS
+[Fri May  9 21:28:30 2025] SYSTEM SYSTEM_START System initialized SUCCESS
+[Fri May  9 22:08:48 2025] SYSTEM SYSTEM_START System initialized SUCCESS
+[Fri May  9 22:09:16 2025] Azlan LOGIN User authenticated successfully SUCCESS
+[Fri May  9 22:10:14 2025] SYSTEM SYSTEM_START System initialized SUCCESS
+[Fri May  9 22:10:29 2025] Azlan LOGIN User authenticated successfully SUCCESS
+[Fri May  9 22:10:50 2025] PriorityManager ADD_TASK TaskID:1 SUCCESS
+[Fri May  9 22:10:50 2025] Azlan CREATE TaskID:1 SUCCESS
+[Fri May  9 22:11:07 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Fri May  9 22:11:07 2025] Azlan UPDATE TaskID:1 SUCCESS
+[Fri May  9 22:11:15 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Fri May  9 22:11:15 2025] Azlan UPDATE TaskID:1 SUCCESS
+[Fri May  9 22:11:31 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Fri May  9 22:11:31 2025] Azlan UPDATE TaskID:1 SUCCESS
+[Fri May  9 22:11:43 2025] PriorityManager UPDATE_PRIORITY TaskID:1 SUCCESS
+[Fri May  9 22:11:43 2025] Azlan UPDATE_PRIORITY TaskID:1 SUCCESS
+[Fri May  9 22:13:07 2025] SYSTEM SYSTEM_START System initialized SUCCESS
+[Fri May  9 22:13:19 2025] Azlan LOGIN User authenticated successfully SUCCESS
+[Fri May  9 22:13:51 2025] PriorityManager ADD_TASK TaskID:1 SUCCESS
+[Fri May  9 22:13:51 2025] Azlan CREATE TaskID:1 SUCCESS
+[Fri May  9 22:14:16 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Fri May  9 22:14:16 2025] Azlan UPDATE TaskID:1 SUCCESS
+[Fri May  9 22:14:22 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Fri May  9 22:14:22 2025] Azlan UPDATE TaskID:1 SUCCESS
+[Fri May  9 22:14:26 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Fri May  9 22:14:26 2025] Azlan UPDATE TaskID:1 SUCCESS
+[Fri May  9 22:14:45 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Fri May  9 22:14:45 2025] Azlan UPDATE TaskID:1 SUCCESS
+[Fri May  9 22:14:51 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Fri May  9 22:14:51 2025] Azlan UPDATE TaskID:1 SUCCESS
+[Fri May  9 22:15:09 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Fri May  9 22:15:09 2025] Azlan UPDATE TaskID:1 SUCCESS
+[Fri May  9 22:15:34 2025] SYSTEM SYSTEM_START System initialized SUCCESS
+[Fri May  9 22:15:46 2025] Azlan MFA_VALIDATION Invalid or expired OTP FAILED
+[Fri May  9 22:23:18 2025] SYSTEM SYSTEM_START System initialized SUCCESS
+[Fri May  9 22:23:32 2025] Azlan LOGIN User authenticated successfully SUCCESS
+[Fri May  9 22:23:43 2025] PriorityManager ADD_TASK TaskID:1 SUCCESS
+[Fri May  9 22:23:43 2025] Azlan CREATE TaskID:1 SUCCESS
+[Fri May  9 22:24:23 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Fri May  9 22:24:23 2025] Azlan UPDATE TaskID:1 SUCCESS
+[Fri May  9 22:25:40 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Fri May  9 22:25:40 2025] Azlan UPDATE TaskID:1 SUCCESS
+[Fri May  9 22:25:54 2025] PriorityManager UPDATE_PRIORITY TaskID:1 SUCCESS
+[Fri May  9 22:25:54 2025] Azlan UPDATE_PRIORITY TaskID:1 SUCCESS
+[Fri May  9 22:26:00 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Fri May  9 22:26:00 2025] Azlan UPDATE TaskID:1 SUCCESS
+[Fri May  9 22:26:07 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Fri May  9 22:26:07 2025] Azlan UPDATE TaskID:1 SUCCESS
+[Fri May  9 22:26:17 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Fri May  9 22:26:17 2025] Azlan UPDATE TaskID:1 SUCCESS
+[Fri May  9 22:26:24 2025] PriorityManager ADD_TASK TaskID:2 SUCCESS
+[Fri May  9 22:26:24 2025] Azlan CREATE TaskID:2 SUCCESS
+[Fri May  9 22:26:32 2025] PriorityManager UPDATE_PRIORITY TaskID:2 SUCCESS
+[Fri May  9 22:26:32 2025] Azlan UPDATE_PRIORITY TaskID:2 SUCCESS
+[Fri May  9 23:40:03 2025] SYSTEM SYSTEM_START System initialized SUCCESS
+[Fri May  9 23:40:33 2025] Azlan LOGIN User authenticated successfully SUCCESS
+[Sat May 10 00:30:22 2025] SYSTEM SYSTEM_START System initialized SUCCESS
+[Sat May 10 00:31:05 2025] Azlan LOGIN User authenticated successfully SUCCESS
+[Sat May 10 00:31:26 2025] Azlan SEND_MESSAGE To:waseem SUCCESS
+[Sat May 10 00:33:08 2025] SYSTEM SYSTEM_START System initialized SUCCESS
+[Sat May 10 00:33:26 2025] Azlan LOGIN User authenticated successfully SUCCESS
+[Sat May 10 00:33:43 2025] Azlan SEND_MESSAGE To:Azlan SUCCESS
+[Sat May 10 00:34:41 2025] SYSTEM SYSTEM_START System initialized SUCCESS
+[Sat May 10 00:34:54 2025] Azlan LOGIN User authenticated successfully SUCCESS
+[Sat May 10 00:35:09 2025] NotificationSystem SEND_NOTIFICATION Notification broadcast SUCCESS
+[Sat May 10 17:17:25 2025] SYSTEM SYSTEM_START System initialized SUCCESS
+[Sat May 10 17:17:49 2025] Azlan LOGIN User authenticated successfully SUCCESS
+[Sat May 10 17:18:03 2025] PriorityManager ADD_TASK TaskID:1 SUCCESS
+[Sat May 10 17:18:03 2025] Azlan CREATE TaskID:1 SUCCESS
+[Sat May 10 17:18:07 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Sat May 10 17:18:07 2025] Azlan UPDATE TaskID:1 SUCCESS
+[Sat May 10 17:18:14 2025] Azlan UPDATE_TASK TaskID:1 STATUS_CHANGED
+[Sat May 10 17:18:14 2025] Azlan UPDATE TaskID:1 SUCCESS
