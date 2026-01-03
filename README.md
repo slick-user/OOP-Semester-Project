@@ -1,6 +1,6 @@
 # OSIM - Organizational Simulation and Internal Management System
 
-Was my (Azlan Ali Khan) and Sameer Hussain's Final Project for our OOP Course
+Was Azlan Ali Khan and Sameer Hussain's Final Project for our OOP Course
 
 ## Project Overview
 OSIM simulates an internal organizational environment where users with different roles (Junior, Manager, Director, Executive) interact through tasks, messages, and resources. All access is strictly governed by Role-Based Access Control (RBAC), clearance levels, and centralized
@@ -17,3 +17,16 @@ policy enforcement. Key activities include task delegation, secure messaging, an
 ## Core Functional Requirements
 1. User System & RBAC
 2. Authentication & Credential Security
+3. Task System
+4. Timeouts & inactivity Handling
+5. Secure Messaging
+6. Audit Logger
+
+## Additional Features
+1. Multi Factor Authentication
+2. Performance Review System
+3. Audit Anomaly Detection
+4. Global Notification System
+5. Task Priority System
+6. GUI-Style Dashboard
+7. Digital Signatures for task approvals
